@@ -354,3 +354,6 @@ Events.MEDIACONTROL_MOUSELEAVE_SEEKBAR = 'mediacontrol:mouseleave:seekbar'
 Events.MEDIACONTROL_PLAYING = 'mediacontrol:playing'
 Events.MEDIACONTROL_NOTPLAYING = 'mediacontrol:notplaying'
 Events.MEDIACONTROL_CONTAINERCHANGED = 'mediacontrol:containerchanged'
+
+// Core Events
+Events.CORE_CONTAINERS_CREATED = 'core:containers:created'
