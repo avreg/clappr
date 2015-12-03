@@ -36,5 +36,9 @@ module.exports = {
   resolve: {
     root: path.resolve(__dirname, 'src'),
     extensions: ['', '.js'],
+    fallback: path.join(__dirname, 'node_modules'),
+  },
+  resolveLoader: {
+    fallback: path.join(__dirname, 'node_modules')
   }
 };
