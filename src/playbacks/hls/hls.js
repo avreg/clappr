@@ -8,12 +8,18 @@ import Events from 'base/events'
 import Playback from 'base/playback'
 import Browser from 'components/browser'
 
+const AUTO = -1
+
 export default class HLS extends HTML5VideoPlayback {
   get name() { return 'hls' }
 
-  get levels() { return (this.hls && this.hls.levels) || [] }
-  get currentLevel() { return (this.hls && this.hls.currentLevel) || -1 }
-  set currentLevel(level) { this.hls && (this.hls.currentLevel = level) }
+  get levels() { return this._levels || [] }
+  get currentLevel() { return this._currentLevel || AUTO }
+  set currentLevel(id) {
+    this._currentLevel = id
+    this.trigger(Events.PLAYBACK_LEVEL_SWITCH_START)
+    this.hls.currentLevel = this._currentLevel
+  }
 
   constructor(options) {
     super(options)
@@ -41,6 +47,11 @@ export default class HLS extends HTML5VideoPlayback {
     this.hls.on(HLSJS.Events.LEVEL_SWITCH, (evt,data) => this.onLevelSwitch(evt, data))
     this.hls.on(HLSJS.Events.FRAG_LOADED, (evt, data) => this.onFragmentLoaded(evt, data))
     this.hls.attachMedia(this.el)
+  }
+
+  // override
+  setupSrc(srcUrl) {
+    // this playback manages the src on the video element itself
   }
 
   // the duration on the video element itself should not be used
@@ -115,6 +126,12 @@ export default class HLS extends HTML5VideoPlayback {
 
   updatePlaybackType(evt, data) {
     this.playbackType = data.details.live ? Playback.LIVE : Playback.VOD
+    this.fillLevels()
+  }
+
+  fillLevels() {
+    this._levels = this.hls.levels.map((level, index) => { return {id: index , label: `${level.height}p`}})
+    this.trigger(Events.PLAYBACK_LEVELS_AVAILABLE, this._levels)
   }
 
   updateDuration(evt, data) {
@@ -131,6 +148,7 @@ export default class HLS extends HTML5VideoPlayback {
   }
 
   onLevelSwitch(evt, data) {
+    this.trigger(Events.PLAYBACK_LEVEL_SWITCH_END)
     this.trigger(Events.PLAYBACK_LEVEL_SWITCH, data)
     var currentLevel = this.levels[data.level]
     if (currentLevel) {
