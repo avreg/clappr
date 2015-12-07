@@ -125,6 +125,10 @@ export default class HLS extends HTML5VideoPlayback {
     }
   }
 
+  /// Override native html5 video element event, nothing to do
+  error(event) {
+  }
+
   updatePlaybackType(evt, data) {
     this.playbackType = data.details.live ? Playback.LIVE : Playback.VOD
     this.fillLevels()
