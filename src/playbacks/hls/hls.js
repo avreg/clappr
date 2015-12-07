@@ -46,6 +46,7 @@ export default class HLS extends HTML5VideoPlayback {
     this.hls.on(HLSJS.Events.LEVEL_UPDATED, (evt, data) => this.updateDuration(evt, data))
     this.hls.on(HLSJS.Events.LEVEL_SWITCH, (evt,data) => this.onLevelSwitch(evt, data))
     this.hls.on(HLSJS.Events.FRAG_LOADED, (evt, data) => this.onFragmentLoaded(evt, data))
+    this.hls.on(HLSJS.Events.ERROR, (evt, data) => this.onError(evt, data))
     this.hls.attachMedia(this.el)
   }
 
@@ -174,6 +175,30 @@ export default class HLS extends HTML5VideoPlayback {
 
   isSeekEnabled() {
     return (this.playbackType === Playback.VOD || this.dvrEnabled)
+  }
+
+  onError(evt, data) {
+    var
+      errorType = data.type,
+      errorDetails = data.details,
+      errorFatal = data.fatal,
+      html5errcode; // MEDIA_ERR_ABORTED(1), MEDIA_ERR_NETWORK(2), MEDIA_ERR_DECODE(3), MEDIA_ERR_SRC_NOT_SUPPORTED(4)
+
+    switch (errorType) {
+      case HLSJS.ErrorTypes.NETWORK_ERROR:
+        html5errcode = 2; // MEDIA_ERR_NETWORK
+        break;
+      case HLSJS.ErrorTypes.MEDIA_ERROR:
+        html5errcode = 3; // MEDIA_ERR_DECODE
+        break;
+      default:
+        html5errcode = 3; // MEDIA_ERR_DECODE FIXME
+        break;
+    }
+
+    if (errorFatal) {
+      this.trigger(Events.PLAYBACK_ERROR, {code: html5errcode, type: errorType, message: errorDetails});
+    }
   }
 }
 
