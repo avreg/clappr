@@ -75,7 +75,7 @@ export default class Core extends UIObject {
   }
 
   setFullscreen() {
-    if(!Browser.isiOs) {
+    if(!Browser.isiOS) {
       this.$el.addClass('fullscreen')
       this.$el.removeAttr('style')
       this.playerInfo.previousSize = { width: this.options.width, height: this.options.height }
@@ -239,12 +239,12 @@ export default class Core extends UIObject {
   toggleFullscreen() {
     if (!Fullscreen.isFullscreen()) {
       Fullscreen.requestFullscreen(this.el)
-      if(!Browser.isiOs) {
+      if(!Browser.isiOS) {
         this.$el.addClass('fullscreen')
       }
     } else {
       Fullscreen.cancelFullscreen()
-      if(!Browser.isiOs) {
+      if(!Browser.isiOS) {
         this.$el.removeClass('fullscreen nocursor')
       }
     }
@@ -266,6 +266,26 @@ export default class Core extends UIObject {
       this.$el.removeClass('nocursor')
     else if (Fullscreen.isFullscreen())
       this.$el.addClass('nocursor')
+  }
+
+  /**
+   * enables to configure the container after its creation
+   * @method configure
+   * @param {Object} options all the options to change in form of a javascript object
+   */
+  configure(options) {
+    this.options = $.extend(this.options, options)
+    var sources = this.options.source || this.options.sources
+
+    if (sources) {
+      this.load(sources)
+    } else {
+      this.trigger(Events.CORE_OPTIONS_CHANGE)
+
+      this.containers.forEach((container) => {
+        container.configure(this.options)
+      })
+    }
   }
 
   render() {
