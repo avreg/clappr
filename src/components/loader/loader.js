@@ -26,6 +26,8 @@ import ClickToPausePlugin from 'plugins/click_to_pause'
 /* Core Plugins */
 import DVRControls from 'plugins/dvr_controls'
 import Favicon from 'plugins/favicon'
+import SeekTime from 'plugins/seek_time'
+import SourcesPlugin from 'plugins/sources'
 
 /**
  * It keeps a list of the default plugins (playback, container, core) and it merges external plugins with its internals.
@@ -46,7 +48,7 @@ export default class Loader extends BaseObject {
     this.playerId = playerId
     this.playbackPlugins = [HTML5VideoPlayback, HTML5AudioPlayback, FlashVideoPlayback, HLSVideoPlayback, FlasHLSVideoPlayback, HTMLImgPlayback, NoOp]
     this.containerPlugins = [SpinnerThreeBouncePlugin, WaterMarkPlugin, PosterPlugin, StatsPlugin, GoogleAnalyticsPlugin, ClickToPausePlugin]
-    this.corePlugins = [DVRControls, Favicon]
+    this.corePlugins = [DVRControls, Favicon, SeekTime, SourcesPlugin]
     if (externalPlugins) {
       this.validateExternalPluginsType(externalPlugins)
       this.addExternalPlugins(externalPlugins)

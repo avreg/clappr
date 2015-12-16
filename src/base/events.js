@@ -201,6 +201,12 @@ Object.keys(listenMethods).forEach(function(method) {
 
 // PLAYER EVENTS
 /**
+ * Fired when the player is ready on startup
+ *
+ * @event PLAYER_READY
+ */
+Events.PLAYER_READY = 'ready'
+/**
  * Fired when player resizes
  *
  * @event PLAYER_RESIZE
@@ -358,6 +364,8 @@ Events.PLAYBACK_BITRATE = 'playback:bitrate'
  * @event PLAYBACK_LEVELS_AVAILABLE
  * @param {Array} levels
  * the ordered levels, each one with the following format `{id: 1, label: '500kbps'}` ps: id should be a number >= 0
+ * @param {Number} initial
+ * the initial level otherwise -1 (AUTO)
  */
 Events.PLAYBACK_LEVELS_AVAILABLE = 'playback:levels:available'
 /**
@@ -403,7 +411,12 @@ Events.PLAYBACK_LEVEL_SWITCH = 'playback:level:switch'
  * @event CORE_OPTIONS_CHANGE
  */
 Events.CORE_OPTIONS_CHANGE = 'core:options:change'
-
+/**
+ * Fired after creating containers, when the core is ready
+ *
+ * @event CORE_READY
+ */
+Events.CORE_READY = 'core:ready'
 
 // Container Events
 /**
@@ -602,3 +615,6 @@ Events.MEDIACONTROL_NOTPLAYING = 'mediacontrol:notplaying'
  * @event MEDIACONTROL_CONTAINERCHANGED
  */
 Events.MEDIACONTROL_CONTAINERCHANGED = 'mediacontrol:containerchanged'
+
+// Core Events
+Events.CORE_CONTAINERS_CREATED = 'core:containers:created'

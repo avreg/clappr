@@ -39,6 +39,10 @@ var baseUrl = currentScriptUrl().replace(/\/[^\/]+$/, "")
  * ```
  */
 export default class Player extends BaseObject {
+
+  set loader(loader) { this._loader = loader }
+  get loader() { return this._loader = this._loader || new Loader(this.options.plugins || {}, this.options.playerId) }
+
   /**
    * ## Player's constructor
    *
@@ -59,6 +63,10 @@ export default class Player extends BaseObject {
    * the id of the element on the page that the player should be inserted into
    * @param {Object} [options.parent]
    * a reference to a dom element that the player should be inserted into
+   * @param {String} [options.source]
+   * The media source URL, or {source: <<source URL>>, mimeType: <<source mime type>>}
+   * @param {Object} [options.sources]
+   * An array of media source URL's, or an array of {source: <<source URL>>, mimeType: <<source mime type>>}
    * @param {Boolean} [options.autoPlay]
    * automatically play after page load **default**: `false`
    * @param {Boolean} [options.loop]
@@ -99,14 +107,17 @@ export default class Player extends BaseObject {
    * define a poster by adding its address `poster: 'http://url/img.png'`. It will appear after video embed, disappear on play and go back when user stops the video.
    * @param {String} [options.playbackNotSupportedMessage]
    * define a custom message to be displayed when a playback is not supported.
+   * @param {Object} [options.events]
+   * Specify listeners which will be registered with their corresponding player events.
+   * E.g. onReady -> "PLAYER_READY", onTimeUpdate -> "PLAYER_TIMEUPDATE"
    */
   constructor(options) {
     super(options)
     var defaultOptions = {playerId: uniqueId(""), persistConfig: true, width: 640, height: 360, baseUrl: baseUrl}
     this.options = $.extend(defaultOptions, options)
     this.options.sources = this.normalizeSources(options)
-    this.loader = new Loader(this.options.plugins || {}, this.options.playerId)
-    this.coreFactory = new CoreFactory(this, this.loader)
+    this.registerOptionEventListeners()
+    this.coreFactory = new CoreFactory(this)
     this.playerInfo = PlayerInfo.getInstance(this.options.playerId)
     this.playerInfo.currentSize = {width: options.width, height: options.height}
     this.playerInfo.options = this.options
@@ -141,8 +152,24 @@ export default class Player extends BaseObject {
     this.addEventListeners()
   }
 
+  /**
+   * Determine if the player is ready.
+   * @return {boolean} true if the player is ready. ie PLAYER_READY event has fired
+   */
+  isReady() {
+    return !!this.ready
+  }
+
   addEventListeners() {
-    this.listenTo(this.core.mediaControl,  Events.MEDIACONTROL_CONTAINERCHANGED, this.containerChanged)
+    if (!this.core.isReady()) {
+      this.listenToOnce(this.core, Events.CORE_READY, this.onReady)
+    } else {
+      this.onReady()
+    }
+    this.listenTo(this.core.mediaControl, Events.MEDIACONTROL_CONTAINERCHANGED, this.containerChanged)
+  }
+
+  addContainerEventListeners() {
     var container = this.core.mediaControl.container
     if (!!container) {
       this.listenTo(container, Events.CONTAINER_PLAY, this.onPlay)
@@ -156,9 +183,40 @@ export default class Player extends BaseObject {
     }
   }
 
+  registerOptionEventListeners() {
+    var eventsMapping = {
+      "onReady": Events.PLAYER_READY,
+      "onResize": Events.PLAYER_RESIZE,
+      "onPlay": Events.PLAYER_PLAY,
+      "onPause": Events.PLAYER_PAUSE,
+      "onStop": Events.PLAYER_STOP,
+      "onEnded": Events.PLAYER_ENDED,
+      "onSeek": Events.PLAYER_SEEK,
+      "onError": Events.PLAYER_ERROR,
+      "onTimeUpdate": Events.PLAYER_TIMEUPDATE,
+      "onVolumeUpdate": Events.PLAYER_VOLUMEUPDATE
+    }
+    var userEvents = this.options.events || {}
+
+    Object.keys(userEvents).forEach((userEvent) => {
+      var eventType = eventsMapping[userEvent]
+      if (eventType) {
+        var eventFunction = userEvents[userEvent]
+        eventFunction = typeof eventFunction === "function" && eventFunction
+        eventFunction && this.listenTo(this, eventType, eventFunction)
+      }
+    })
+  }
+
   containerChanged() {
     this.stopListening()
     this.addEventListeners()
+  }
+
+  onReady() {
+    this.ready = true
+    this.addContainerEventListeners()
+    this.trigger(Events.PLAYER_READY)
   }
 
   onVolumeUpdate(volume) {
@@ -198,8 +256,8 @@ export default class Player extends BaseObject {
   }
 
   normalizeSources(options) {
-    var sources = options.sources || (options.source !== undefined? [options.source.toString()] : [])
-    return sources.length === 0 ? ['no.op'] : sources
+    var sources = options.sources || (options.source !== undefined? [options.source] : [])
+    return sources.length === 0 ? [{source:"", mimeType:""}] : sources
   }
 
   /**
@@ -219,6 +277,7 @@ export default class Player extends BaseObject {
    * loads a new source.
    * @method load
    * @param {Object} sources source or sources of video.
+   * sources can be a string or {source: <<source URL>>, mimeType: <<source mime type>>}
    * @param {Object} mimeType a mime type, example: `'application/vnd.apple.mpegurl'`
    *
    */

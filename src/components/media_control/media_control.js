@@ -13,7 +13,6 @@ import Kibo from 'base/kibo'
 import Styler from 'base/styler'
 import UIObject from 'base/ui_object'
 import Browser from 'components/browser'
-import SeekTime from 'components/seek_time'
 import Mediator from 'components/mediator'
 import template from 'base/template'
 import Playback from 'base/playback'
@@ -67,7 +66,6 @@ export default class MediaControl extends UIObject {
     this.mute = this.options.mute
     this.persistConfig = this.options.persistConfig
     this.container = options.container
-    this.seekTime = new SeekTime(this)
     this.currentPositionValue = null
     this.currentDurationValue = null
     var initialVolume = (this.persistConfig) ? Config.restore("volume") : 100
@@ -81,12 +79,16 @@ export default class MediaControl extends UIObject {
       default: ['position', 'seekbar', 'duration']
     }
 
-    if (!$.isEmptyObject(this.container.settings)) {
-      this.settings = $.extend({}, this.container.settings)
+    if (this.container) {
+      if (!$.isEmptyObject(this.container.settings)) {
+        this.settings = $.extend({}, this.container.settings)
+      }
+    } else {
+      this.settings = {}
     }
 
     this.disabled = false
-    if (this.container.mediaControlDisabled || this.options.chromeless) {
+    if ((this.container && this.container.mediaControlDisabled) || this.options.chromeless) {
       this.disable()
     }
     this.stopDragHandler = (event) => this.stopDrag(event)
@@ -96,19 +98,21 @@ export default class MediaControl extends UIObject {
   }
 
   addEventListeners() {
-    Mediator.on(`${this.options.playerId}:${Events.PLAYER_RESIZE}`, this.playerResize, this)
-    this.listenTo(this.container, Events.CONTAINER_PLAY, this.changeTogglePlay)
-    this.listenTo(this.container, Events.CONTAINER_PAUSE, this.changeTogglePlay)
-    this.listenTo(this.container, Events.CONTAINER_DBLCLICK, this.toggleFullscreen)
-    this.listenTo(this.container, Events.CONTAINER_TIMEUPDATE, this.onTimeUpdate)
-    this.listenTo(this.container, Events.CONTAINER_PROGRESS, this.updateProgressBar)
-    this.listenTo(this.container, Events.CONTAINER_SETTINGSUPDATE, this.settingsUpdate)
-    this.listenTo(this.container, Events.CONTAINER_PLAYBACKDVRSTATECHANGED, this.settingsUpdate)
-    this.listenTo(this.container, Events.CONTAINER_HIGHDEFINITIONUPDATE, this.highDefinitionUpdate)
-    this.listenTo(this.container, Events.CONTAINER_MEDIACONTROL_DISABLE, this.disable)
-    this.listenTo(this.container, Events.CONTAINER_MEDIACONTROL_ENABLE, this.enable)
-    this.listenTo(this.container, Events.CONTAINER_ENDED, this.ended)
-    this.listenTo(this.container, Events.CONTAINER_VOLUME, this.onVolumeChanged)
+    if (this.container) {
+      Mediator.on(`${this.options.playerId}:${Events.PLAYER_RESIZE}`, this.playerResize, this)
+      this.listenTo(this.container, Events.CONTAINER_PLAY, this.changeTogglePlay)
+      this.listenTo(this.container, Events.CONTAINER_PAUSE, this.changeTogglePlay)
+      this.listenTo(this.container, Events.CONTAINER_DBLCLICK, this.toggleFullscreen)
+      this.listenTo(this.container, Events.CONTAINER_TIMEUPDATE, this.onTimeUpdate)
+      this.listenTo(this.container, Events.CONTAINER_PROGRESS, this.updateProgressBar)
+      this.listenTo(this.container, Events.CONTAINER_SETTINGSUPDATE, this.settingsUpdate)
+      this.listenTo(this.container, Events.CONTAINER_PLAYBACKDVRSTATECHANGED, this.settingsUpdate)
+      this.listenTo(this.container, Events.CONTAINER_HIGHDEFINITIONUPDATE, this.highDefinitionUpdate)
+      this.listenTo(this.container, Events.CONTAINER_MEDIACONTROL_DISABLE, this.disable)
+      this.listenTo(this.container, Events.CONTAINER_MEDIACONTROL_ENABLE, this.enable)
+      this.listenTo(this.container, Events.CONTAINER_ENDED, this.ended)
+      this.listenTo(this.container, Events.CONTAINER_VOLUME, this.onVolumeChanged)
+    }
   }
 
   disable() {
@@ -142,7 +146,7 @@ export default class MediaControl extends UIObject {
   }
 
   changeTogglePlay() {
-    if (this.container.isPlaying()) {
+    if (this.container && this.container.isPlaying()) {
       this.$playPauseToggle.removeClass('paused').addClass('playing')
       this.$playStopToggle.removeClass('stopped').addClass('playing')
       this.trigger(Events.MEDIACONTROL_PLAYING)
@@ -290,9 +294,11 @@ export default class MediaControl extends UIObject {
   }
 
   setVolume(value) {
-    this.currentVolume = Math.min(100, Math.max(value, 0))
-    this.container.setVolume(this.currentVolume)
-    this.onVolumeChanged(this.currentVolume)
+    if (value !== undefined && this.container) {
+      this.currentVolume = Math.min(100, Math.max(value, 0))
+      this.container.setVolume(this.currentVolume)
+      this.onVolumeChanged(this.currentVolume)
+    }
   }
 
   toggleFullscreen() {
@@ -392,11 +398,6 @@ export default class MediaControl extends UIObject {
 
   setKeepVisible() {
     this.keepVisible = true
-  }
-
-  remove() {
-    this.seekTime.remove()
-    super.remove()
   }
 
   resetKeepVisible() {
@@ -595,7 +596,6 @@ export default class MediaControl extends UIObject {
     })
 
     this.parseColors()
-    this.seekTime.render()
     this.highDefinitionUpdate()
 
     this.trigger(Events.MEDIACONTROL_RENDERED)
