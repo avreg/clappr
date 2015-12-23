@@ -24,6 +24,7 @@ import DVRControls from 'plugins/dvr_controls'
 import Favicon from 'plugins/favicon'
 import SeekTime from 'plugins/seek_time'
 import SourcesPlugin from 'plugins/sources'
+import EndVideo from 'plugins/end_video'
 
 const PLUGIN_TYPES = ['playback', 'container', 'core']
 
@@ -49,7 +50,8 @@ const PLUGIN_CLASSES_ORDERED = {
       DVRControls,
       Favicon,
       SeekTime,
-      SourcesPlugin
+      SourcesPlugin,
+      EndVideo
    ]
 }
 
