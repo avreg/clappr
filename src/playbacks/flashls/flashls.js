@@ -35,6 +35,7 @@ export default class FlasHLS extends BaseFlashPlayback {
     this.initHlsParameters(options)
     this.highDefinition = false
     this.autoPlay = options.autoPlay
+    this.chromeless = options.chromeless
     this.loop = options.loop
     this.defaultSettings = {
       left: ["playstop"],
