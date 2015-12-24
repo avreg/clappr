@@ -19,9 +19,7 @@ var objectIE = '<object type="application/x-shockwave-flash" id="<%= cid %>" cla
 export default class BaseFlashPlayback extends Playback {
   get tagName() { return 'object' }
   get swfPath() { return '' }
-  get wmode() {
-    return this.chromeless === true ? 'transparent' : 'opaque'
-  }
+  get wmode() { return 'opaque' }
   get template() { return template(flashHTML) }
   get attributes() {
     return {
