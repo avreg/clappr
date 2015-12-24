@@ -5,10 +5,10 @@
 import Kibo from 'base/kibo'
 
 var BOLD = 'font-weight: bold; font-size: 13px;'
-var INFO = 'color: #006600;' + BOLD
-var DEBUG = 'color: #0000ff;' + BOLD
-var WARN = 'color: #ff8000;' + BOLD
-var ERROR = 'color: #ff0000;' + BOLD
+var INFO = 'color: #006600;'
+var DEBUG = 'color: #0000ff;'
+var WARN = 'color: #ff8000;'
+var ERROR = 'color: #ff0000;'
 
 var LEVEL_DEBUG = 0
 var LEVEL_INFO = 1
@@ -23,7 +23,16 @@ export default class Log {
   constructor(level = LEVEL_INFO, offLevel = LEVEL_DISABLED) {
     this.kibo = new Kibo()
     this.kibo.down(['ctrl shift d'], () => this.onOff())
-    this.BLACKLIST = ['timeupdate', 'playback:timeupdate', 'playback:progress', 'container:hover', 'container:timeupdate', 'container:progress']
+    this.BLACKLIST = [
+      'timeupdate',
+      'playback:timeupdate',
+      'playback:progress',
+      'container:hover',
+      'container:timeupdate',
+      'container:progress',
+      'mediacontrol:show',
+      'container:mediacontrol:show'
+    ]
     this.level = level
     this.offLevel = offLevel
   }
