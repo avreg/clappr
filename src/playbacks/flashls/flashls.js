@@ -49,42 +49,43 @@ export default class FlasHLS extends BaseFlashPlayback {
   }
 
   initHlsParameters(options) {
-    this.autoStartLoad = (options.autoStartLoad === undefined) ? true : options.autoStartLoad
-    this.capLevelToStage = (options.capLevelToStage === undefined) ? false : options.capLevelToStage
-    this.maxLevelCappingMode = (options.maxLevelCappingMode === undefined) ? "downscale" : options.maxLevelCappingMode
-    this.minBufferLength = (options.minBufferLength === undefined) ? -1 : options.minBufferLength
-    this.minBufferLengthCapping = (options.minBufferLengthCapping === undefined) ? -1 : options.minBufferLengthCapping
-    this.maxBufferLength = (options.maxBufferLength === undefined) ? 120 : options.maxBufferLength
-    this.maxBackBufferLength = (options.maxBackBufferLength === undefined) ? 30 : options.maxBackBufferLength
-    this.lowBufferLength = (options.lowBufferLength === undefined) ? 3 : options.lowBufferLength
-    this.mediaTimePeriod = (options.mediaTimePeriod === undefined) ? 100 : options.mediaTimePeriod
-    this.fpsDroppedMonitoringPeriod = (options.fpsDroppedMonitoringPeriod === undefined) ? 5000 : options.fpsDroppedMonitoringPeriod
-    this.fpsDroppedMonitoringThreshold = (options.fpsDroppedMonitoringThreshold === undefined) ? 0.2 : options.fpsDroppedMonitoringThreshold
-    this.capLevelonFPSDrop = (options.capLevelonFPSDrop === undefined) ? false : options.capLevelonFPSDrop
-    this.smoothAutoSwitchonFPSDrop = (options.smoothAutoSwitchonFPSDrop === undefined) ? this.capLevelonFPSDrop : options.smoothAutoSwitchonFPSDrop
-    this.switchDownOnLevelError = (options.switchDownOnLevelError === undefined) ? true : options.switchDownOnLevelError
-    this.seekMode = (options.seekMode === undefined) ? "ACCURATE" : options.seekMode
-    this.keyLoadMaxRetry = (options.keyLoadMaxRetry === undefined) ? 3 : options.keyLoadMaxRetry
-    this.keyLoadMaxRetryTimeout = (options.keyLoadMaxRetryTimeout === undefined) ? 64000 : options.keyLoadMaxRetryTimeout
-    this.fragmentLoadMaxRetry = (options.fragmentLoadMaxRetry === undefined) ? 3 : options.fragmentLoadMaxRetry
-    this.fragmentLoadMaxRetryTimeout = (options.fragmentLoadMaxRetryTimeout === undefined) ? 4000 : options.fragmentLoadMaxRetryTimeout
-    this.fragmentLoadSkipAfterMaxRetry = (options.fragmentLoadSkipAfterMaxRetry === undefined) ? true : options.fragmentLoadSkipAfterMaxRetry
-    this.flushLiveURLCache = (options.flushLiveURLCache === undefined) ? false : options.flushLiveURLCache
-    this.initialLiveManifestSize = (options.initialLiveManifestSize === undefined) ? 1 : options.initialLiveManifestSize
-    this.manifestLoadMaxRetry = (options.manifestLoadMaxRetry === undefined) ? 3 : options.manifestLoadMaxRetry
-    this.manifestLoadMaxRetryTimeout = (options.manifestLoadMaxRetryTimeout === undefined) ? 64000 : options.manifestLoadMaxRetryTimeout
-    this.manifestRedundantLoadmaxRetry = (options.manifestRedundantLoadmaxRetry === undefined) ? 3 : options.manifestRedundantLoadmaxRetry
-    this.startFromBitrate = (options.startFromBitrate === undefined) ? -1 : options.startFromBitrate
-    this.startFromLevel = (options.startFromLevel === undefined) ? -1 : options.startFromLevel
-    this.autoStartMaxDuration = (options.autoStartMaxDuration === undefined) ? -1 : options.autoStartMaxDuration
-    this.seekFromLevel = (options.seekFromLevel === undefined) ? -1 : options.seekFromLevel
-    this.useHardwareVideoDecoder = (options.useHardwareVideoDecoder === undefined) ? false : options.useHardwareVideoDecoder
-    this.hlsLogEnabled = (options.hlsLogEnabled === undefined) ? true : options.hlsLogEnabled
-    this.logDebug = (options.logDebug === undefined) ? false : options.logDebug
-    this.logDebug2 = (options.logDebug2 === undefined) ? false : options.logDebug2
-    this.logWarn = (options.logWarn === undefined) ? true : options.logWarn
-    this.logError = (options.logError === undefined) ? true : options.logError
-    this.hlsMinimumDvrSize = (options.hlsMinimumDvrSize === undefined) ? 60 : options.hlsMinimumDvrSize
+    let cfg = options.flashlsConfig
+    this.autoStartLoad = (cfg.autoStartLoad === undefined) ? true : cfg.autoStartLoad
+    this.capLevelToStage = (cfg.capLevelToStage === undefined) ? false : cfg.capLevelToStage
+    this.maxLevelCappingMode = (cfg.maxLevelCappingMode === undefined) ? "downscale" : cfg.maxLevelCappingMode
+    this.minBufferLength = (cfg.minBufferLength === undefined) ? -1 : cfg.minBufferLength
+    this.minBufferLengthCapping = (cfg.minBufferLengthCapping === undefined) ? -1 : cfg.minBufferLengthCapping
+    this.maxBufferLength = (cfg.maxBufferLength === undefined) ? 120 : cfg.maxBufferLength
+    this.maxBackBufferLength = (cfg.maxBackBufferLength === undefined) ? 30 : cfg.maxBackBufferLength
+    this.lowBufferLength = (cfg.lowBufferLength === undefined) ? 3 : cfg.lowBufferLength
+    this.mediaTimePeriod = (cfg.mediaTimePeriod === undefined) ? 100 : cfg.mediaTimePeriod
+    this.fpsDroppedMonitoringPeriod = (cfg.fpsDroppedMonitoringPeriod === undefined) ? 5000 : cfg.fpsDroppedMonitoringPeriod
+    this.fpsDroppedMonitoringThreshold = (cfg.fpsDroppedMonitoringThreshold === undefined) ? 0.2 : cfg.fpsDroppedMonitoringThreshold
+    this.capLevelonFPSDrop = (cfg.capLevelonFPSDrop === undefined) ? false : cfg.capLevelonFPSDrop
+    this.smoothAutoSwitchonFPSDrop = (cfg.smoothAutoSwitchonFPSDrop === undefined) ? this.capLevelonFPSDrop : cfg.smoothAutoSwitchonFPSDrop
+    this.switchDownOnLevelError = (cfg.switchDownOnLevelError === undefined) ? true : cfg.switchDownOnLevelError
+    this.seekMode = (cfg.seekMode === undefined) ? "ACCURATE" : cfg.seekMode
+    this.keyLoadMaxRetry = (cfg.keyLoadMaxRetry === undefined) ? 3 : cfg.keyLoadMaxRetry
+    this.keyLoadMaxRetryTimeout = (cfg.keyLoadMaxRetryTimeout === undefined) ? 64000 : cfg.keyLoadMaxRetryTimeout
+    this.fragmentLoadMaxRetry = (cfg.fragmentLoadMaxRetry === undefined) ? 3 : cfg.fragmentLoadMaxRetry
+    this.fragmentLoadMaxRetryTimeout = (cfg.fragmentLoadMaxRetryTimeout === undefined) ? 4000 : cfg.fragmentLoadMaxRetryTimeout
+    this.fragmentLoadSkipAfterMaxRetry = (cfg.fragmentLoadSkipAfterMaxRetry === undefined) ? true : cfg.fragmentLoadSkipAfterMaxRetry
+    this.flushLiveURLCache = (cfg.flushLiveURLCache === undefined) ? false : cfg.flushLiveURLCache
+    this.initialLiveManifestSize = (cfg.initialLiveManifestSize === undefined) ? 1 : cfg.initialLiveManifestSize
+    this.manifestLoadMaxRetry = (cfg.manifestLoadMaxRetry === undefined) ? 3 : cfg.manifestLoadMaxRetry
+    this.manifestLoadMaxRetryTimeout = (cfg.manifestLoadMaxRetryTimeout === undefined) ? 64000 : cfg.manifestLoadMaxRetryTimeout
+    this.manifestRedundantLoadmaxRetry = (cfg.manifestRedundantLoadmaxRetry === undefined) ? 3 : cfg.manifestRedundantLoadmaxRetry
+    this.startFromBitrate = (cfg.startFromBitrate === undefined) ? -1 : cfg.startFromBitrate
+    this.startFromLevel = (cfg.startFromLevel === undefined) ? -1 : cfg.startFromLevel
+    this.autoStartMaxDuration = (cfg.autoStartMaxDuration === undefined) ? -1 : cfg.autoStartMaxDuration
+    this.seekFromLevel = (cfg.seekFromLevel === undefined) ? -1 : cfg.seekFromLevel
+    this.useHardwareVideoDecoder = (cfg.useHardwareVideoDecoder === undefined) ? false : cfg.useHardwareVideoDecoder
+    this.hlsLogEnabled = (cfg.hlsLogEnabled === undefined) ? true : cfg.hlsLogEnabled
+    this.logDebug = (cfg.logDebug === undefined) ? false : cfg.logDebug
+    this.logDebug2 = (cfg.logDebug2 === undefined) ? false : cfg.logDebug2
+    this.logWarn = (cfg.logWarn === undefined) ? true : cfg.logWarn
+    this.logError = (cfg.logError === undefined) ? true : cfg.logError
+    this.hlsMinimumDvrSize = (cfg.hlsMinimumDvrSize === undefined) ? 60 : cfg.hlsMinimumDvrSize
   }
 
   addListeners() {
