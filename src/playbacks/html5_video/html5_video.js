@@ -12,6 +12,7 @@ import Events from 'base/events'
 import tagStyle from './public/style.scss'
 import sourceHTML from './public/index.html'
 import find from 'lodash.find'
+import Log from 'plugins/log'
 
 const MIMETYPES = {
   'mp4': ["avc1.42E01E", "avc1.58A01E", "avc1.4D401E", "avc1.64001E", "mp4v.20.8", "mp4v.20.240", "mp4a.40.2"].map(
@@ -53,13 +54,14 @@ export default class HTML5Video extends Playback {
     }
   }
 
-
   constructor(options) {
     super(options)
     this.options = options
     this.setupSrc(options.src)
     this.el.loop = options.loop
-    this.firstBuffer = true
+    this.firstBuffer_ = true
+    this.isReadyState_ = false
+    this.buffering_ = false
     this.settings = {default: ['seekbar']}
     if (Browser.isSafari) {
       this.setupSafari()
@@ -86,6 +88,8 @@ export default class HTML5Video extends Playback {
   }
 
   loadedMetadata(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
+
     this.durationChange()
     var autoSeekFromUrl = typeof(this.options.autoSeekFromUrl) === "undefined" || this.options.autoSeekFromUrl
     if (this.getPlaybackType() !== Playback.LIVE && autoSeekFromUrl) {
@@ -94,7 +98,8 @@ export default class HTML5Video extends Playback {
     this.trigger(Events.PLAYBACK_LOADEDMETADATA, {duration: e.target.duration, data: e})
   }
 
-  durationChange() {
+  durationChange(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
     // we can't figure out if hls resource is VoD or not until it is being loaded or duration has changed.
     // that's why we check it again and update media control accordingly.
     if (this.getPlaybackType() === Playback.VOD) {
@@ -155,38 +160,45 @@ export default class HTML5Video extends Playback {
   }
 
   get isReady() {
-    return this.isReadyState
+    return this.isReadyState_
   }
 
-  playing() {
+  playing(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
     this.trigger(Events.PLAYBACK_PLAY);
   }
 
-  paused() {
+  paused(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
     this.trigger(Events.PLAYBACK_PAUSE);
   }
 
-  ended() {
+  ended(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
     this.trigger(Events.PLAYBACK_BUFFERFULL, this.name)
     this.trigger(Events.PLAYBACK_ENDED, this.name)
     this.trigger(Events.PLAYBACK_TIMEUPDATE, { current: 0, total: this.el.duration }, this.name)
   }
 
-  stalled() {
+  stalled(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
     if (this.getPlaybackType() === Playback.VOD && this.el.readyState < this.el.HAVE_FUTURE_DATA) {
       this.trigger(Events.PLAYBACK_BUFFERING, this.name)
     }
   }
 
-  waiting() {
+  waiting(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
     if(this.el.readyState < this.el.HAVE_FUTURE_DATA) {
       this.trigger(Events.PLAYBACK_BUFFERING, this.name)
     }
   }
 
-  bufferFull() {
-    if (this.options.poster && this.firstBuffer) {
-      this.firstBuffer = false
+  bufferFull(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
+    this.buffering_ = false
+    if (this.options.poster && this.firstBuffer_) {
+      this.firstBuffer_ = false
       if (!this.isPlaying()) {
         this.el.poster = this.options.poster
       }
@@ -257,10 +269,10 @@ export default class HTML5Video extends Playback {
     var playbackPos = this.el.currentTime + 0.05; // 50 ms threshold
     if (this.isPlaying() && playbackPos >= bufferedPos) {
       this.trigger(Events.PLAYBACK_BUFFERING, this.name)
-      this.buffering = true
-    } else if (this.buffering) {
+      this.buffering_ = true
+    } else if (this.buffering_) {
       this.trigger(Events.PLAYBACK_BUFFERFULL, this.name)
-      this.buffering = false
+      this.buffering_ = false
     }
   }
 
@@ -268,12 +280,15 @@ export default class HTML5Video extends Playback {
     return (src.indexOf('.m3u8') > 0) ? 'application/vnd.apple.mpegurl' : 'video/mp4'
   }
 
-  ready() {
+  ready(e) {
+    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
     this.trigger(Events.PLAYBACK_READY, this.name)
-    this.isReadyState = true
-    if (this.firstBuffer) {
+    this.isReadyState_ = true
+    if (this.firstBuffer_) {
       this.trigger(Events.PLAYBACK_BUFFERFULL, this.name)
-      this.firstBuffer = this.buffering = false
+      this.firstBuffer_ = this.buffering_ = false
+    } else {
+       this.buffering_ = true
     }
   }
 
