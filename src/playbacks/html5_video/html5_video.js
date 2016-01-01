@@ -60,8 +60,8 @@ export default class HTML5Video extends Playback {
     this.setupSrc(options.src)
     this.el.loop = options.loop
     this.firstBuffer_ = true
-    this.isReadyState_ = false
-    this.buffering_ = false
+    this.isReadyState_ = undefined
+    this.buffering_ = undefined
     this.settings = {default: ['seekbar']}
     if (Browser.isSafari) {
       this.setupSafari()
@@ -90,7 +90,7 @@ export default class HTML5Video extends Playback {
   loadedMetadata(e) {
     Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
 
-    this.durationChange()
+    this.durationChange(e)
     var autoSeekFromUrl = typeof(this.options.autoSeekFromUrl) === "undefined" || this.options.autoSeekFromUrl
     if (this.getPlaybackType() !== Playback.LIVE && autoSeekFromUrl) {
       this.checkInitialSeek()
@@ -281,7 +281,11 @@ export default class HTML5Video extends Playback {
   }
 
   ready(e) {
-    Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
+    if (e) {
+      Log.debug.apply(Log, [this.name, `${e.target.tagName}:${e.type}`, e.target.id])
+    } else {
+      Log.debug.apply(Log, [this.name00])
+    }
     this.trigger(Events.PLAYBACK_READY, this.name)
     this.isReadyState_ = true
     if (this.firstBuffer_) {

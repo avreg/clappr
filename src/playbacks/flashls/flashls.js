@@ -49,7 +49,7 @@ export default class FlasHLS extends BaseFlashPlayback {
   }
 
   initHlsParameters(options) {
-    let cfg = options.flashlsConfig
+    let cfg = options.flashlsConfig || {}
     this.autoStartLoad = (cfg.autoStartLoad === undefined) ? true : cfg.autoStartLoad
     this.capLevelToStage = (cfg.capLevelToStage === undefined) ? false : cfg.capLevelToStage
     this.maxLevelCappingMode = (cfg.maxLevelCappingMode === undefined) ? "downscale" : cfg.maxLevelCappingMode
