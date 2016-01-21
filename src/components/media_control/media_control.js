@@ -6,7 +6,7 @@
  * The MediaControl is responsible for displaying the Player controls.
  */
 
-import {Config, Fullscreen, formatTime} from 'base/utils'
+import {Config, Fullscreen, formatTime, formatTimeRT} from 'base/utils'
 
 import Events from 'base/events'
 import Kibo from 'base/kibo'
@@ -72,6 +72,12 @@ export default class MediaControl extends UIObject {
     this.setVolume(this.mute ? 0 : initialVolume)
     this.keepVisible = false
     this.volumeBarClickDown = false
+    if (this.options.startDate) {
+      let startDate = new Date(this.options.startDate)
+      this.startTimeSec_ = parseInt(startDate.getTime() / 1000)
+    } else {
+      this.startTimeSec_ = 0
+    }
     this.addEventListeners()
     this.settings = {
       left: ['play', 'stop', 'pause'],
@@ -362,6 +368,8 @@ export default class MediaControl extends UIObject {
   }
 
   renderSeekBar() {
+    let newPosition, newDuration, rt;
+
     if (this.currentPositionValue === null || this.currentDurationValue === null) {
       // this will be triggered as soon as these beocome available
       return
@@ -374,8 +382,14 @@ export default class MediaControl extends UIObject {
     }
     this.setSeekPercentage(this.currentSeekBarPercentage)
 
-    var newPosition = formatTime(this.currentPositionValue)
-    var newDuration = formatTime(this.currentDurationValue)
+    if (this.startTimeSec_) {
+      rt = formatTimeRT(this.currentPositionValue, this.currentDurationValue, this.startTimeSec_)
+      newPosition = rt.cur
+      newDuration = rt.end
+    } else {
+      newPosition = formatTime(this.currentPositionValue)
+      newDuration = formatTime(this.currentDurationValue)
+    }
     if (newPosition !== this.displayedPosition) {
       this.$position.text(newPosition)
       this.displayedPosition = newPosition

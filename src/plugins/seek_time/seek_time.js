@@ -28,18 +28,23 @@ export default class SeekTime extends UICorePlugin {
   get isLiveStreamWithDvr() { return this.mediaControlContainer && this.mediaControlContainer.getPlaybackType() === Playback.LIVE && this.mediaControlContainer.isDvrEnabled() }
   get durationShown() { return this.isLiveStreamWithDvr }
   get useActualLiveTime() { return this.actualLiveTime && this.isLiveStreamWithDvr }
+  get useRealTime() { return !!this.startDate_ || this.useActualLiveTime }
   constructor(core) {
     super(core)
     this.hoveringOverSeekBar = false
     this.hoverPosition = null
     this.duration = null
     this.actualLiveTime = !!this.mediaControl.options.actualLiveTime
-    if (this.actualLiveTime) {
-      if (!!this.mediaControl.options.actualLiveServerTime) {
-        this.actualLiveServerTimeDiff = new Date().getTime() - new Date(this.mediaControl.options.actualLiveServerTime).getTime()
-      } else {
-        this.actualLiveServerTimeDiff = 0
-      }
+    let startDate_ = new Date(this.mediaControl.options.startDate)
+    if (!isNaN(startDate_.getDate())) {
+      this.startTimeSec_ = (startDate_.getTime() / 1000) - (startDate_.getTimezoneOffset() * 60) 
+    } else {
+      this.startTimeSec_ = undefined
+    }
+    if (this.actualLiveTime && this.startTimeSec_ !== undefined) {
+      this.actualLiveServerTimeOffset = new Date().getTime() - startDate_.getTime()
+    } else {
+      this.actualLiveServerTimeOffset = 0
     }
   }
 
@@ -82,14 +87,17 @@ export default class SeekTime extends UICorePlugin {
   }
 
   getSeekTime() {
-    var seekTime = null
+    var seekTime = null, d, e, secondsSinceMidnight;
     if (this.useActualLiveTime) {
-      var d = new Date(new Date().getTime() - this.actualLiveServerTimeDiff), e = new Date(d)
-      var secondsSinceMidnight = (e - d.setHours(0,0,0,0)) / 1000
+      d = new Date(new Date().getTime() - this.actualLiveServerTimeOffset)
+      e = new Date(d)
+      secondsSinceMidnight = (e - d.setHours(0,0,0,0)) / 1000
       seekTime = (secondsSinceMidnight - this.duration) + (this.hoverPosition * this.duration)
       if (seekTime < 0) {
         seekTime += 86400
       }
+    } else if (this.startTimeSec_ !== undefined) {
+      seekTime = (this.hoverPosition * this.duration + this.startTimeSec_) % 86400
     } else {
       seekTime = this.hoverPosition * this.duration
     }
@@ -107,7 +115,7 @@ export default class SeekTime extends UICorePlugin {
     }
     else {
       var seekTime = this.getSeekTime()
-      var currentSeekTime = formatTime(seekTime.seekTime, this.useActualLiveTime)
+      var currentSeekTime = formatTime(seekTime.seekTime, this.useRealTime)
       // only update dom if necessary, ie time actually changed
       if (currentSeekTime !== this.displayedSeekTime) {
         this.$seekTimeEl.text(currentSeekTime)
@@ -116,13 +124,12 @@ export default class SeekTime extends UICorePlugin {
 
       if (this.durationShown) {
         this.$durationEl.show()
-        var currentDuration = formatTime(this.actualLiveTime ? seekTime.secondsSinceMidnight : this.duration, this.actualLiveTime)
+        var currentDuration = formatTime(this.useRealTime ? seekTime.secondsSinceMidnight : this.duration, this.useRealTime)
         if (currentDuration !== this.displayedDuration) {
           this.$durationEl.text(currentDuration)
           this.displayedDuration = currentDuration
         }
-      }
-      else {
+      } else {
         this.$durationEl.hide()
       }
 

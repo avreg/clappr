@@ -46,6 +46,53 @@ export function formatTime(time, paddedHours) {
     return out.trim()
 }
 
+function onlySeconds(time)
+{
+  if (isNaN(time)) {
+    return NaN;
+  }
+  time = time * 1000;
+  return parseInt(time/1000);
+}
+
+function formatHMS(t) {
+  return ('0' + t.getHours()).slice(-2) + ':' +
+    ('0' + t.getMinutes()).slice(-2) + ':' +
+    ('0' + t.getSeconds()).slice(-2);
+}
+
+export function formatTimeRT(cur, duration, start)
+{
+  let
+    out = {
+      start: '--:--:--',
+      cur: '--:--:--',
+      end: '--:--:--'
+    },
+    timeStart,
+    timeCur,
+    timeEnd;
+
+  if (typeof(start) !== undefined) {
+    timeStart = new Date(onlySeconds(start));
+    out.start = formatHMS(timeStart);
+  } else {
+    timeStart = false;
+  }
+
+  if (timeStart && isFinite(cur)) {
+    timeCur = new Date(onlySeconds(cur + start) * 1000);
+    out.cur = formatHMS(timeCur);
+  }
+
+  if (timeStart && isFinite(duration)) {
+    timeEnd = new Date(onlySeconds(duration + start) * 1000);
+    out.end = formatHMS(timeEnd);
+  }
+
+  return out;
+}
+
 export var Fullscreen = {
   isFullscreen: function() {
     return (
