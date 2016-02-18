@@ -10,6 +10,26 @@ import UIObject from './ui_object'
  */
 export default class Playback extends UIObject {
   /**
+   * Determine if the playback has ended.
+   * @property ended
+   * @type Boolean
+   */
+  get ended() {
+    return false
+  }
+
+  /**
+   * Determine if the playback is having to buffer in order for
+   * playback to be smooth.
+   * (i.e if a live stream is playing smoothly, this will be false)
+   * @property buffering
+   * @type Boolean
+   */
+  get buffering() {
+    return false
+  }
+
+  /**
    * @method constructor
    * @param {Object} options the options object
    */
@@ -41,19 +61,29 @@ export default class Playback extends UIObject {
    * @method seek
    * @param {Number} time should be a number between 0 and the video duration
    */
-  seek(time) {}
+  seek(time) { /*jshint unused:false*/ }
 
   /**
    * seeks the playback to a given `percentage` in percentage
    * @method seekPercentage
    * @param {Number} time should be a number between 0 and 100
    */
-  seekPercentage(percentage) {}
+  seekPercentage(percentage) {/*jshint unused:false*/}
+
+
+  /**
+   * The time that "0" now represents relative to when playback started.
+   * For a stream with a sliding window this will increase as content is
+   * removed from the beginning.
+   * @method getStartTimeOffset
+   * @return {Number} time (in seconds) that time "0" represents.
+   */
+  getStartTimeOffset() { return 0 }
 
   /**
    * gets the duration in seconds
    * @method getDuration
-   * @return {Number} duration time (in seconds) of the current source
+   * @return {Number} duration (in seconds) of the current source
    */
   getDuration() { return 0 }
 
@@ -105,7 +135,7 @@ export default class Playback extends UIObject {
    * @method volume
    * @param {Number} value a number between 0 (`muted`) to 100 (`max`)
    */
-  volume(value) {}
+  volume(value) {/*jshint unused:false*/}
 
   /**
    * destroys the playback, removing it from DOM
@@ -131,6 +161,7 @@ Playback.extend = function(properties) {
  * @return {Boolean} `true` if the playback is playable, otherwise `false`
  */
 Playback.canPlay = (source, mimeType) => {
+  /*jshint unused:false*/
   return false
 }
 

@@ -41,7 +41,7 @@ export default class MediaControl extends UIObject {
       'click [data-playstop]': 'togglePlayStop',
       'click [data-fullscreen]': 'toggleFullscreen',
       'click .bar-container[data-seekbar]': 'seek',
-      'click .bar-container[data-volume]': 'volume',
+      'click .bar-container[data-volume]': 'onVolumeClick',
       'click .drawer-icon[data-volume]': 'toggleMute',
       'mouseenter .drawer-container[data-volume]': 'showVolumeBar',
       'mouseleave .drawer-container[data-volume]': 'hideVolumeBar',
@@ -60,16 +60,20 @@ export default class MediaControl extends UIObject {
 
   get template() { return template(mediaControlHTML) }
 
+  get stylesheet() { return Styler.getStyleFor(mediaControlStyle, {baseUrl: this.options.baseUrl}) }
+
+  get volume() { return this.intendedVolume }
+  get muted() { return this.volume === 0 }
+
   constructor(options) {
     super(options)
     this.options = options
-    this.mute = this.options.mute
     this.persistConfig = this.options.persistConfig
     this.container = options.container
     this.currentPositionValue = null
     this.currentDurationValue = null
     var initialVolume = (this.persistConfig) ? Config.restore("volume") : 100
-    this.setVolume(this.mute ? 0 : initialVolume)
+    this.setVolume(this.options.mute ? 0 : initialVolume)
     this.keepVisible = false
     this.volumeBarClickDown = false
     if (this.options.startDate) {
@@ -145,10 +149,23 @@ export default class MediaControl extends UIObject {
     this.container.stop()
   }
 
-  onVolumeChanged(level) {
-    this.mute = (this.currentVolume === 0)
-    this.setVolumeLevel(level)
-    this.persistConfig && Config.persist("volume", level)
+  onVolumeChanged() {
+    this.updateVolumeUI()
+  }
+
+  updateVolumeUI() {
+    if (!this.rendered) {
+      // this will be called after a render
+      return
+    }
+    this.$volumeBarContainer.find('.segmented-bar-element').removeClass('fill')
+    var item = Math.ceil(this.volume / 10.0)
+    this.$volumeBarContainer.find('.segmented-bar-element').slice(0, item).addClass('fill')
+    if (!this.muted) {
+      this.$volumeIcon.removeClass('muted')
+    } else {
+      this.$volumeIcon.addClass('muted')
+    }
   }
 
   changeTogglePlay() {
@@ -175,9 +192,13 @@ export default class MediaControl extends UIObject {
     this.trigger(Events.MEDIACONTROL_MOUSELEAVE_SEEKBAR, event)
   }
 
+  onVolumeClick(event) {
+    this.setVolume(this.getVolumeFromUIEvent(event))
+  }
+
   mousemoveOnVolumeBar(event) {
-    if(this.volumeBarClickDown){
-      this.volume(event)
+    if(this.volumeBarClickDown) {
+      this.setVolume(this.getVolumeFromUIEvent(event))
     }
   }
 
@@ -278,32 +299,45 @@ export default class MediaControl extends UIObject {
       this.setSeekPercentage(pos)
     } else if (this.draggingVolumeBar) {
       event.preventDefault()
-      this.volume(event)
+      this.setVolume(this.getVolumeFromUIEvent(event))
     }
   }
 
-  volume(event) {
+  getVolumeFromUIEvent(event) {
     var offsetY = event.pageX - this.$volumeBarContainer.offset().left
     var volumeFromUI = (offsetY / this.$volumeBarContainer.width()) * 100
-    this.setVolume(volumeFromUI)
+    return volumeFromUI
   }
 
   toggleMute() {
-    if (this.mute) {
-      if (this.currentVolume <= 0) {
-        this.currentVolume = 100
-      }
-      this.setVolume(this.currentVolume)
-    } else {
-      this.setVolume(0)
-    }
+    this.setVolume(this.muted ? 100 : 0)
   }
 
   setVolume(value) {
-    if (value !== undefined && this.container) {
-      this.currentVolume = Math.min(100, Math.max(value, 0))
-      this.container.setVolume(this.currentVolume)
-      this.onVolumeChanged(this.currentVolume)
+    value = Math.min(100, Math.max(value, 0))
+    // this will hold the intended volume
+    // it may not actually get set to this straight away
+    // if the container is not ready etc
+    this.intendedVolume = value
+    this.persistConfig && Config.persist("volume", value)
+    var setWhenContainerReady = () => {
+      if (this.container.isReady) {
+        this.container.setVolume(value)
+      }
+      else {
+        this.listenToOnce(this.container, Events.CONTAINER_READY, () => {
+          this.container.setVolume(value)
+        })
+      }
+    }
+
+    if (!this.container) {
+      this.listenToOnce(this, Events.MEDIACONTROL_CONTAINERCHANGED, () => {
+        setWhenContainerReady()
+      })
+    }
+    else {
+      setWhenContainerReady()
     }
   }
 
@@ -314,14 +348,17 @@ export default class MediaControl extends UIObject {
   }
 
   setContainer(container) {
-    this.stopListening(this.container)
+    if (this.container) {
+      this.stopListening(this.container)
+    }
     Mediator.off(`${this.options.playerId}:${Events.PLAYER_RESIZE}`, this.playerResize, this)
     this.container = container
+    // set the new container to match the volume of the last one
+    this.setVolume(this.intendedVolume)
     this.changeTogglePlay()
     this.addEventListeners()
     this.settingsUpdate()
     this.container.trigger(Events.CONTAINER_PLAYBACKDVRSTATECHANGED, this.container.isDvrInUse())
-    this.setVolume(this.currentVolume)
     if (this.container.mediaControlDisabled) {
       this.disable()
     }
@@ -495,21 +532,6 @@ export default class MediaControl extends UIObject {
     this.displayedDuration = this.$duration.text()
   }
 
-  setVolumeLevel(value) {
-    if (!this.container.isReady || !this.$volumeBarContainer) {
-      this.listenToOnce(this.container, Events.CONTAINER_READY, () => this.setVolumeLevel(value))
-    } else {
-      this.$volumeBarContainer.find('.segmented-bar-element').removeClass('fill')
-      var item = Math.ceil(value / 10.0)
-      this.$volumeBarContainer.find('.segmented-bar-element').slice(0, item).addClass('fill')
-      if (value > 0) {
-        this.$volumeIcon.removeClass('muted')
-      } else {
-        this.$volumeIcon.addClass('muted')
-      }
-    }
-  }
-
   setSeekPercentage(value) {
     value = Math.max(Math.min(value, 100.0), 0)
     if (this.displayedSeekBarPercentage === value) {
@@ -534,9 +556,7 @@ export default class MediaControl extends UIObject {
   }
 
   bindKeyEvents() {
-    if (this.kibo) {
-      this.unbindKeyEvents()
-    }
+    this.unbindKeyEvents()
     this.kibo = new Kibo(this.options.focusElement)
     this.kibo.down(['space'], () => this.togglePlayPause())
     this.kibo.down(['left'], () => this.seekRelative(-15))
@@ -546,10 +566,12 @@ export default class MediaControl extends UIObject {
   }
 
   unbindKeyEvents() {
-    this.kibo.off('space')
-    this.kibo.off('left')
-    this.kibo.off('right')
-    this.kibo.off([1,2,3,4,5,6,7,8,9,0])
+    if (this.kibo) {
+      this.kibo.off('space')
+      this.kibo.off('left')
+      this.kibo.off('right')
+      this.kibo.off([1,2,3,4,5,6,7,8,9,0])
+    }
   }
 
   parseColors() {
@@ -571,9 +593,8 @@ export default class MediaControl extends UIObject {
 
   render() {
     var timeout = 1000
-    var style = Styler.getStyleFor(mediaControlStyle, {baseUrl: this.options.baseUrl})
     this.$el.html(this.template({ settings: this.settings }))
-    this.$el.append(style)
+    this.$el.append(this.stylesheet)
     this.createCachedElements()
     this.$playPauseToggle.addClass('paused')
     this.$playStopToggle.addClass('stopped')
@@ -603,7 +624,6 @@ export default class MediaControl extends UIObject {
         this.$seekBarContainer.addClass('seek-disabled')
       }
 
-      this.onVolumeChanged(this.container.volume)
       this.bindKeyEvents()
       this.playerResize({width: this.options.width, height: this.options.height})
       this.hideVolumeBar(0)
@@ -612,6 +632,8 @@ export default class MediaControl extends UIObject {
     this.parseColors()
     this.highDefinitionUpdate()
 
+    this.rendered = true
+    this.updateVolumeUI()
     this.trigger(Events.MEDIACONTROL_RENDERED)
     return this
   }

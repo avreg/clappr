@@ -21,11 +21,36 @@ export default class FlasHLS extends BaseFlashPlayback {
   get swfPath() { return template(hlsSwf)({baseUrl: this.baseUrl}) }
 
   get levels() { return this._levels || [] }
-  get currentLevel() { return this._currentLevel || AUTO }
+  get currentLevel() {
+    if (this._currentLevel === null || this._currentLevel === undefined) {
+      return AUTO;
+    } else {
+      return this._currentLevel; //0 is a valid level ID
+    }
+  }
   set currentLevel(id) {
     this._currentLevel = id
     this.trigger(Events.PLAYBACK_LEVEL_SWITCH_START)
     this.el.playerSetCurrentLevel(id)
+  }
+
+  /**
+   * Determine if the playback has ended.
+   * @property ended
+   * @type Boolean
+   */
+  get ended() {
+    return this.hasEnded
+  }
+
+  /**
+   * Determine if the playback is buffering.
+   * This is related to the PLAYBACK_BUFFERING and PLAYBACK_BUFFERFULL events
+   * @property buffering
+   * @type Boolean
+   */
+  get buffering() {
+    return !!this.bufferingState && !this.hasEnded
   }
 
   constructor(options) {
@@ -45,6 +70,7 @@ export default class FlasHLS extends BaseFlashPlayback {
     }
     this.settings = $.extend({}, this.defaultSettings)
     this.playbackType = Playback.LIVE
+    this.hasEnded = false
     this.addListeners()
   }
 
@@ -153,6 +179,7 @@ export default class FlasHLS extends BaseFlashPlayback {
     this.el.playerSetFragmentLoadMaxRetry(this.fragmentLoadMaxRetry)
     this.el.playerSetFragmentLoadMaxRetryTimeout(this.fragmentLoadMaxRetryTimeout)
     this.el.playerSetFragmentLoadSkipAfterMaxRetry(this.fragmentLoadSkipAfterMaxRetry)
+    this.el.playerSetMaxSkippedFragments(this.maxSkippedFragments)
     this.el.playerSetFlushLiveURLCache(this.flushLiveURLCache)
     this.el.playerSetInitialLiveManifestSize(this.initialLiveManifestSize)
     this.el.playerSetManifestLoadMaxRetry(this.manifestLoadMaxRetry)
@@ -270,6 +297,11 @@ export default class FlasHLS extends BaseFlashPlayback {
     this.el.playerSetFragmentLoadSkipAfterMaxRetry(this.fragmentLoadSkipAfterMaxRetry)
   }
 
+  setMaxSkippedFragments(maxSkippedFragments) {
+    this.maxSkippedFragments = maxSkippedFragments
+    this.el.playerSetMaxSkippedFragments(this.maxSkippedFragments)
+  }
+
   setFlushLiveURLCache(flushLiveURLCache) {
     this.flushLiveURLCache = flushLiveURLCache
     this.el.playerSetFlushLiveURLCache(this.flushLiveURLCache)
@@ -346,7 +378,7 @@ export default class FlasHLS extends BaseFlashPlayback {
   }
 
   levelChanged(level) {
-    var currentLevel = this.levels[level]
+    var currentLevel = this.el.getLevels()[level]
     if (currentLevel) {
       this.highDefinition = (currentLevel.height >= 720 || (currentLevel.bitrate / 1000) >= 2000);
       this.trigger(Events.PLAYBACK_HIGHDEFINITIONUPDATE, this.highDefinition)
@@ -428,10 +460,12 @@ export default class FlasHLS extends BaseFlashPlayback {
 
   setPlaybackState(state) {
     if (["PLAYING_BUFFERING", "PAUSED_BUFFERING"].indexOf(state) >= 0)  {
+      this.bufferingState = true
       this.trigger(Events.PLAYBACK_BUFFERING, this.name)
       this.updateCurrentState(state)
     } else if (["PLAYING", "PAUSED"].indexOf(state) >= 0) {
       if (["PLAYING_BUFFERING", "PAUSED_BUFFERING", "IDLE"].indexOf(this.currentState) >= 0) {
+        this.bufferingState = false
         this.trigger(Events.PLAYBACK_BUFFERFULL, this.name)
       }
       this.updateCurrentState(state)
@@ -442,6 +476,7 @@ export default class FlasHLS extends BaseFlashPlayback {
         this.seek(0)
       } else {
         this.updateCurrentState(state)
+        this.hasEnded = true
         this.trigger(Events.PLAYBACK_TIMEUPDATE, {current: 0, total: this.el.getDuration()}, this.name)
         this.trigger(Events.PLAYBACK_ENDED, this.name)
       }
@@ -450,6 +485,9 @@ export default class FlasHLS extends BaseFlashPlayback {
 
   updateCurrentState(state) {
     this.currentState = state
+    if (state !== "IDLE") {
+      this.hasEnded = false
+    }
     this.updatePlaybackType()
     if (state === "PLAYING") {
       this.trigger(Events.PLAYBACK_PLAY, this.name)

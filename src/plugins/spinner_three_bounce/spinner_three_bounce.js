@@ -62,6 +62,9 @@ export default class SpinnerThreeBouncePlugin extends UIContainerPlugin {
     this.container.$el.append(style)
     this.container.$el.append(this.$el)
     this.$el.hide()
+    if (this.container.buffering) {
+      this.onBuffering()
+    }
     return this
   }
 }

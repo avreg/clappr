@@ -15,7 +15,7 @@
 Add the following script on your HTML:
 ```html
 <head>
-  <script type="text/javascript" src="http://cdn.clappr.io/latest/clappr.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/clappr/latest/clappr.min.js"></script>
 </head>
 ```
 Now, create the player:
@@ -46,6 +46,10 @@ PS4 Browser    | ✔ | ✔ | ✘ |  ? | ![rtmp](http://flv.io/external3.png) | !
 
 ![rtmp](http://flv.io/external3.png) means that the support is made by an external plugin.
 
+## CDN
+
+You can use the latest published version at `https://cdn.jsdelivr.net/clappr/latest/clappr.min.js`
+
 ## External Plugins
 
 Plugin         |Status|Compatible with latest Clappr|URL|
@@ -56,12 +60,15 @@ Level Selector| Ready | Yes | https://github.com/clappr/clappr-level-selector-pl
 360 videos| Ready | Yes | https://github.com/thiagopnts/video-360
 Chromecast| Ready | Yes | https://github.com/clappr/clappr-chromecast-plugin
 DASH with shaka| Ready | Yes | https://github.com/clappr/dash-shaka-playback
+Playback Speed | Ready | Yes | https://github.com/bikegriffith/clappr-playback-rate-plugin
+Pause while far| Ready | Yes | https://github.com/leandromoreira/clappr-pause-tab-visibility
 RTMP           | Ready | Yes | https://github.com/clappr/clappr-rtmp-plugin
 HLS+P2P        | Ready | [WIP](https://github.com/bemtv/clappr-p2phls-plugin/issues/148) | http://bem.tv
 Comments on seekbar| Ready | ? | http://labs.jordane.net/clappr-comment/
 Voice control| Ready | ? | https://github.com/flavioribeiro/clappr-speech-control-plugin
 Dash           | WIP | No | https://github.com/shankardevy/clappr-dash-plugin
 Youtube        | Ready | No | https://github.com/towerz/clappr-youtube-playback
+
 
 ## Built-in Plugins & Embed Parameters
 
@@ -137,6 +144,32 @@ Result:
 
 I'm sure you can do better than me.
 
+For advanced configuration, you can create an entire `MediaControl` object. At its most basic,
+you might consider subclassing the base `MediaControl` and using your own custom HTML and CSS.
+
+```javascript
+  // ES6-style code shown
+  class MyMediaControl extends Clappr.MediaControl {
+    get template() {
+      return Clappr.template(
+        `<div>My HTML here based on clappr/src/components/media_control/public/media-control.html</div>`
+      )
+    }
+    get stylesheet () {
+      return Clappr.Styler.getStyleFor(
+        `.my-css-class { /* based on clappr/src/components/media_control/public/media-control.scss */ }`
+      )
+    }
+    constructor(options) {
+        super(options);
+    }
+  }
+  let player = new Clappr.Player({
+    source: "http://your.video/here.mp4",
+    mediacontrol: MyMediaControl
+  });
+```
+
 ##### Media Control Auto Hide
 
 If you want to disable media control auto hide, add `hideMediaControl: false` in your embed parameters.
@@ -146,17 +179,21 @@ If you want to disable media control auto hide, add `hideMediaControl: false` in
 When embedded with width less than 320, volume bars are hidden. You can force this behavior for all sizes by adding `hideVolumeBar: true`.
 
 ##### Watermark
-Put `watermark: http://url/img.png` on your embed parameters to automatically add watermark on your video. Choose corner position by defining position parameter. Positions can be `bottom-left`, `bottom-right`, `top-left` and `top-right`. Example:
+Put `watermark: http://url/img.png` on your embed parameters to automatically add watermark on your video. Choose corner position by defining position parameter. Positions can be `bottom-left`, `bottom-right`, `top-left` and `top-right`. To define an URL to open when the watermark is clicked, use watermarkLink parameter. If the watermarkLink parameter not defined, the watermark will not be clickable. Example:
 
 ```javascript
   var player = new Clappr.Player({
     source: "http://your.video/here.mp4",
-    watermark: "http://url/img.png", position: 'top-right'
+    watermark: "http://url/img.png", position: 'top-right',
+    watermarkLink: "http://example.net/"
   });
 ```
 
 ##### Poster
-Define a poster by adding `poster: http://url/img.png` on your embed parameters. It will appear after video embed, disappear on play and go back when user stops the video.
+Define a poster image by adding `poster: 'http://url/img.png'` on your player options. It will appear after video embed, disappear on play and go back when user stops the video. For audio broadcasts, the poster stays up while playing.
+
+##### Audio Only Hint
+Some audio-only sources (e.g. HLS) cannot be easily detected as such; for that you can add `audioOnly: true` to the options so clappr knows to treat the source as such.
 
 ##### Stats
 Clappr has a native statistics plugin that accounts QoE metrics such playing time, rebuffering time, total rebuffers, etc. Metrics report happens periodically, learn how to access these numbers on [Create your own plugin](https://github.com/globocom/generator-clappr-plugin) session.

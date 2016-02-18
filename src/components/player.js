@@ -47,6 +47,35 @@ export default class Player extends BaseObject {
   }
 
   /**
+   * Determine if the playback has ended.
+   * @property ended
+   * @type Boolean
+   */
+  get ended() {
+    return this.core.mediaControl.container.ended
+  }
+
+  /**
+   * Determine if the playback is having to buffer in order for
+   * playback to be smooth.
+   * (i.e if a live stream is playing smoothly, this will be false)
+   * @property buffering
+   * @type Boolean
+   */
+  get buffering() {
+    return this.core.mediaControl.container.buffering
+  }
+
+  /*
+   * determine if the player is ready.
+   * @property isReady
+   * @type {Boolean} `true` if the player is ready. ie PLAYER_READY event has fired
+   */
+  get isReady() {
+    return !!this.ready
+  }
+
+  /**
    * ## Player's constructor
    *
    * You might pass the options object to build the player.
@@ -102,6 +131,8 @@ export default class Player extends BaseObject {
    * when embedded with width less than 320, volume bar will hide. You can force this behavior for all sizes by adding `true` **default**: `false`
    * @param {String} [options.watermark]
    * put `watermark: 'http://url/img.png'` on your embed parameters to automatically add watermark on your video. You can customize corner position by defining position parameter. Positions can be `bottom-left`, `bottom-right`, `top-left` and `top-right`.
+   * @param {String} [options.watermarkLink]
+   * `watermarkLink: 'http://example.net/'` - define URL to open when the watermark is clicked. If not provided watermark will not be clickable. 
    * @param {Boolean} [options.disableVideoTagContextMenu]
    * disables the context menu (right click) on the video element if a HTML5Video playback is used.
    * @param {Boolean} [options.autoSeekFromUrl]
@@ -161,16 +192,8 @@ export default class Player extends BaseObject {
     this.addEventListeners()
   }
 
-  /**
-   * Determine if the player is ready.
-   * @return {boolean} true if the player is ready. ie PLAYER_READY event has fired
-   */
-  isReady() {
-    return !!this.ready
-  }
-
   addEventListeners() {
-    if (!this.core.isReady()) {
+    if (!this.core.isReady) {
       this.listenToOnce(this.core, Events.CORE_READY, this.onReady)
     } else {
       this.onReady()
@@ -422,6 +445,17 @@ export default class Player extends BaseObject {
    */
   getCurrentTime() {
     return this.core.mediaControl.container.getCurrentTime()
+  }
+
+  /**
+   * The time that "0" now represents relative to when playback started.
+   * For a stream with a sliding window this will increase as content is
+   * removed from the beginning.
+   * @method getStartTimeOffset
+   * @return {Number} time (in seconds) that time "0" represents.
+   */
+  getStartTimeOffset() {
+   return this.core.mediaControl.container.getStartTimeOffset()
   }
 
   /**

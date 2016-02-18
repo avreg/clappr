@@ -19,6 +19,25 @@ export default class Flash extends BaseFlashPlayback {
   get name() { return 'flash' }
   get swfPath() { return template(flashSwf)({baseUrl: this.baseUrl}) }
 
+  /**
+   * Determine if the playback has ended.
+   * @property ended
+   * @type Boolean
+   */
+  get ended() {
+    return this.currentState === "ENDED"
+  }
+
+  /**
+   * Determine if the playback is buffering.
+   * This is related to the PLAYBACK_BUFFERING and PLAYBACK_BUFFERFULL events
+   * @property buffering
+   * @type Boolean
+   */
+  get buffering() {
+    return !!this.bufferingState && this.currentState !== "ENDED"
+  }
+
   constructor(options) {
     super(options)
     this.src = options.src
@@ -96,9 +115,11 @@ export default class Flash extends BaseFlashPlayback {
     if (this.isIdle || this.currentState === "PAUSED") {
       return
     } else if (this.currentState !== "PLAYING_BUFFERING" && this.el.getState() === "PLAYING_BUFFERING") {
+      this.bufferingState = true
       this.trigger(Events.PLAYBACK_BUFFERING, this.name)
       this.currentState = "PLAYING_BUFFERING"
     } else if (this.el.getState() === "PLAYING") {
+      this.bufferingState = false
       this.trigger(Events.PLAYBACK_BUFFERFULL, this.name)
       this.currentState = "PLAYING"
     } else if (this.el.getState() === "IDLE") {
