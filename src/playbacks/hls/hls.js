@@ -221,10 +221,19 @@ export default class HLS extends HTML5VideoPlayback {
 
   onError(evt, data) {
     var
-      errorType = data.type,
-      errorDetails = data.details,
-      errorFatal = data.fatal,
+      errorType,
+      errorDetails,
+      errorFatal,
       html5errcode; // MEDIA_ERR_ABORTED(1), MEDIA_ERR_NETWORK(2), MEDIA_ERR_DECODE(3), MEDIA_ERR_SRC_NOT_SUPPORTED(4)
+
+    if (!data || !data.type) {
+      Log.warn("Strange HLS error event");
+      return;
+    }
+
+    errorType = data.type;
+    errorDetails = data.details;
+    errorFatal = data.fatal;
 
     switch (errorType) {
       case HLSJS.ErrorTypes.NETWORK_ERROR:
